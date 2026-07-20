@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Solo RPG — Campaign Hub</title>
+<style>
+:root{--bg:#1a1a2e;--panel:#16213e;--accent:#e94560;--text:#eaeaea;--muted:#a0a0a0;--good:#2ecc71;}
+*{box-sizing:border-box;font-family:'Courier New',Courier,monospace;}
+body{background:var(--bg);color:var(--text);margin:0;padding:2rem;min-height:100vh;}
+h1{text-align:center;font-size:2.5rem;margin-bottom:.5rem;text-transform:uppercase;letter-spacing:3px;}
+.subtitle{text-align:center;color:var(--muted);margin-bottom:2rem;}
+.tier-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1.5rem;max-width:900px;margin:0 auto 2rem;}
+.tier-card{background:var(--panel);border:2px solid #0f3460;border-radius:8px;padding:1.5rem;text-align:center;cursor:pointer;transition:.2s;}
+.tier-card:hover{border-color:var(--accent);transform:translateY(-4px);}
+.tier-card h2{margin-top:0;color:var(--accent);font-size:1.3rem;}
+.tier-card p{color:var(--muted);font-size:.9rem;}
+.btn{display:inline-block;background:var(--accent);color:#fff;padding:.6rem 1.2rem;border-radius:4px;text-decoration:none;font-weight:bold;margin-top:.5rem;border:none;cursor:pointer;font-size:1rem;}
+.btn:hover{background:#ff6b81;}
+.campaigns{max-width:700px;margin:2rem auto;background:var(--panel);padding:1.5rem;border-radius:8px;}
+.campaigns h2{margin-top:0;border-bottom:2px solid var(--accent);padding-bottom:.5rem;}
+.campaign-list{list-style:none;padding:0;}
+.campaign-list li{display:flex;justify-content:space-between;align-items:center;padding:.8rem 0;border-bottom:1px solid #0f3460;}
+.campaign-list li:last-child{border:none;}
+.campaign-info{flex:1;}
+.campaign-name{font-weight:bold;color:var(--text);}
+.campaign-meta{font-size:.8rem;color:var(--muted);}
+.actions{display:flex;gap:.5rem;}
+.actions .btn{padding:.4rem .8rem;font-size:.85rem;}
+.empty{color:var(--muted);text-align:center;padding:1rem;font-style:italic;}
+.hidden{display:none;}
+.modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.8);display:flex;justify-content:center;align-items:center;z-index:100;}
+.modal-content{background:var(--panel);padding:2rem;border-radius:8px;max-width:400px;width:90%;border:2px solid var(--accent);} 
+.modal-content h3{margin-top:0;}
+.modal-content input{width:100%;padding:.6rem;margin:.5rem 0;background:#0f3460;border:1px solid var(--accent);color:var(--text);border-radius:4px;}
+.modal-actions{display:flex;gap:.5rem;justify-content:flex-end;margin-top:1rem;}
+.tag{display:inline-block;background:#0f3460;color:var(--accent);padding:.2rem .5rem;border-radius:4px;font-size:.75rem;margin-left:.5rem;}
+</style>
+</head>
+<body>
+<h1>⚔️ Solo RPG</h1>
+<p class="subtitle">Choose your tier. Roll your hero. Play your story.</p>
+
+<div class="tier-grid">
+  <div class="tier-card" onclick="startCampaign('novice')">
+    <h2>Novice</h2>
+    <p>Standard 3d6. Classic death. Pure old-school.</p>
+    <span class="btn">Start Novice</span>
+  </div>
+  <div class="tier-card" onclick="startCampaign('veteran')">
+    <h2>Veteran</h2>
+    <p>4d6 drop lowest. More HP. Slightly forgiving.</p>
+    <span class="btn">Start Veteran</span>
+  </div>
+  <div class="tier-card" onclick="startCampaign('legend')">
+    <h2>Legend</h2>
+    <p>Heroic array. Max HP. You are the chosen one.</p>
+    <span class="btn">Start Legend</span>
+  </div>
+</div>
+
+<div class="campaigns">
+  <h2>Your Campaigns</h2>
+  <ul class="campaign-list" id="campaignList"><li class="empty">No campaigns yet. Pick a tier above.</li></ul>
+</div>
+
+<div id="nameModal" class="modal hidden">
+  <div class="modal-content">
+    <h3>Name Your Campaign</h3>
+    <input type="text" id="campaignName" placeholder="e.g., The Doom of Thornwick" maxlength="40">
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal()" style="background:var(--muted)">Cancel</button>
+      <button class="btn" onclick="confirmStart()">Create & Roll Hero</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let selectedTier = null;
+const campaigns = JSON.parse(localStorage.getItem('srpg_campaigns')||'[]');
+
+function startCampaign(tier){
+  selectedTier = tier;
+  document.getElementById('nameModal').classList.remove('hidden');
+  document.getElementById('campaignName').value = '';
+  document.getElementById('campaignName').focus();
+}
+
+function closeModal(){
+  document.getElementById('nameModal').classList.add('hidden');
+  selectedTier = null;
+}
+
+function confirmStart(){
+  const name = document.getElementById('campaignName').value.trim();
+  if(!name){ alert('Give your campaign a name.'); return; }
+  const id = 'c_' + Date.now();
+  const campaign = {id, name, tier:selectedTier, created:Date.now(), hero:null, log:[]};
+  campaigns.push(campaign);
+  localStorage.setItem('srpg_campaigns', JSON.stringify(campaigns));
+  localStorage.setItem('srpg_active', id);
+  window.location.href = 'character.html';
+}
+
+function renderCampaigns(){
+  const list = document.getElementById('campaignList');
+  if(campaigns.length===0){ list.innerHTML='<li class="empty">No campaigns yet. Pick a tier above.</li>'; return; }
+  list.innerHTML = campaigns.map(c=>{
+    const tierTag = ` <span class="tag">${c.tier}</span>`;
+    const date = new Date(c.created).toLocaleDateString();
+    return `<li>
+      <div class="campaign-info">
+        <div class="campaign-name">${c.name}${tierTag}</div>
+        <div class="campaign-meta">Created ${date} • ${c.hero ? c.hero.name : 'No hero'}</div>
+      </div>
+      <div class="actions">
+        ${c.hero ? `<a class="btn" href="play.html" onclick="localStorage.setItem('srpg_active','${c.id}')">Play</a>` : `<a class="btn" href="character.html" onclick="localStorage.setItem('srpg_active','${c.id}')">Roll Hero</a>`}
+        <button class="btn" style="background:#c0392b" onclick="deleteCampaign('${c.id}')">Delete</button>
+      </div>
+     </li>`;
+  }).join('');
+}
+
+function deleteCampaign(id){
+  if(!confirm('Delete this campaign forever?')) return;
+  const idx = campaigns.findIndex(c=>c.id===id);
+  if(idx>-1){ campaigns.splice(idx,1); localStorage.setItem('srpg_campaigns',JSON.stringify(campaigns)); renderCampaigns(); }
+}
+
+renderCampaigns();
+</script>
+</body>
+</html>

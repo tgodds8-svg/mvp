@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Solo RPG — Play</title>
+<style>
+:root{--bg:#1a1a2e;--panel:#16213e;--accent:#e94560;--text:#eaeaea;--muted:#a0a0a0;--good:#2ecc71;--bad:#e74c3c;--dm:#f1c40f;}
+*{box-sizing:border-box;font-family:'Courier New',Courier,monospace;}
+body{background:var(--bg);color:var(--text);margin:0;height:100vh;display:flex;flex-direction:column;}
+header{background:var(--panel);padding:.8rem 1.5rem;display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid var(--accent);} 
+header h1{margin:0;font-size:1.2rem;text-transform:uppercase;letter-spacing:2px;}
+.hero-bar{display:flex;gap:1.5rem;font-size:.85rem;}
+.hero-bar span{color:var(--muted);} 
+.hero-bar b{color:var(--text);}
+
+main{flex:1;display:flex;overflow:hidden;}
+.sidebar{width:260px;background:var(--panel);border-right:2px solid #0f3460;padding:1rem;overflow-y:auto;}
+.sidebar h3{margin-top:0;color:var(--accent);font-size:1rem;border-bottom:1px solid #0f3460;padding-bottom:.3rem;}
+.sidebar p{font-size:.85rem;margin:.4rem 0;}
+.sidebar .label{color:var(--muted);display:inline-block;width:70px;}
+
+.chat-area{flex:1;display:flex;flex-direction:column;padding:1rem;overflow:hidden;}
+.chat-log{flex:1;overflow-y:auto;background:#0f1a30;border-radius:8px;padding:1rem;margin-bottom:1rem;}
+.msg{margin-bottom:.8rem;line-height:1.4;}
+.msg-player{color:var(--good);} 
+.msg-dm{color:var(--dm);} 
+.msg-combat{color:var(--accent);font-weight:bold;}
+.msg-system{color:var(--muted);font-style:italic;font-size:.85rem;}
+.timestamp{color:var(--muted);font-size:.75rem;margin-right:.5rem;}
+
+.input-area{display:flex;gap:.5rem;}
+.input-area input{flex:1;padding:.7rem;background:#0f3460;border:1px solid var(--accent);color:var(--text);border-radius:4px;font-size:1rem;}
+.input-area button{padding:.7rem 1.2rem;background:var(--accent);color:#fff;border:none;border-radius:4px;font-weight:bold;cursor:pointer;}
+.input-area button:hover{background:#ff6b81;}
+
+.quick-actions{display:flex;gap:.5rem;margin-top:.5rem;flex-wrap:wrap;}
+.quick-actions button{background:#0f3460;border:1px solid var(--accent);color:var(--text);padding:.4rem .8rem;border-radius:4px;cursor:pointer;font-size:.85rem;}
+.quick-actions button:hover{background:var(--accent);}
+
+.combat-panel{background:var(--panel);padding:1rem;border-top:2px solid #0f3460;display:none;}
+.combat-panel.active{display:block;}
+.foe-row{display:flex;gap:1rem;align-items:center;flex-wrap:wrap;}
+.foe-stat{background:#0f1a30;padding:.5rem 1rem;border-radius:4px;}
+.foe-stat b{color:var(--bad);}
+
+@media(max-width:700px){
+  .sidebar{display:none;} 
+  header{flex-direction:column;gap:.5rem;}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>⚔️ Solo RPG</h1>
+  <div class="hero-bar" id="heroBar">
+    <span>HP: <b id="hHp">-</b>/<b id="hMax">-</b></span>
+    <span>AC: <b id="hAc">-</b></span>
+    <span>THAC0: <b id="hThac0">-</b></span>
+  </div>
+  <a href="index.html" style="color:var(--accent);text-decoration:none;font-size:.9rem;">Hub</a>
+</header>
+
+<main>
+  <aside class="sidebar">
+    <h3>Hero</h3>
+    <p><span class="label">Name:</span><b id="sName">-</b></p>
+    <p><span class="label">Class:</span><b id="sClass">-</b></p>
+    <p><span class="label">Level:</span><b id="sLevel">-</b></p>
+    <p><span class="label">XP:</span><b id="sXp">-</b></p>
+    <p><span class="label">STR:</span><b id="sStr">-</b></p>
+    <p><span class="label">DEX:</span><b id="sDex">-</b></p>
+    <p><span class="label">CON:</span><b id="sCon">-</b></p>
+    <p><span class="label">INT:</span><b id="sInt">-</b></p>
+    <p><span class="label">WIS:</span><b id="sWis">-</b></p>
+    <p><span class="label">CHA:</span><b id="sCha">-</b></p>
+    <h3 style="margin-top:1.5rem;">Gear</h3>
+    <p id="sGear" style="font-size:.8rem;color:var(--muted);">-</p>
+  </aside>
+  
+  <section class="chat-area">
+    <div class="chat-log" id="chatLog"></div>
+    <div class="combat-panel" id="combatPanel">
+      <div class="foe-row">
+        <div class="foe-stat">Foe: <b id="fName">-</b></div>
+        <div class="foe-stat">HP: <b id="fHp">-</b></div>
+        <div class="foe-stat">AC: <b id="fAc">-</b></div>
+        <div class="foe-stat">THAC0: <b id="fThac0">-</b></div>
+        <div class="foe-stat">DMG: <b id="fDmg">-</b></div>
+      </div>
+      <div class="quick-actions" style="margin-top:.5rem;">
+        <button onclick="playerAttack()">⚔️ Attack</button>
+        <button onclick="playerDefend()">🛡️ Defend (+2 AC)</button>
+        <button onclick="playerFlee()">🏃 Flee</button>
+        <button onclick="endCombat()">✓ Combat Over</button>
+      </div>
+    </div>
+    <div class="input-area">
+      <input type="text" id="chatInput" placeholder="Describe your action..." onkeydown="if(event.key==='Enter')sendMsg()">
+      <button onclick="sendMsg()">Send</button>
+    </div>
+    <div class="quick-actions">
+      <button onclick="quickAction('Look around')">👁️ Look</button>
+      <button onclick="quickAction('Search the area')">🔍 Search</button>
+      <button onclick="quickAction('Rest')">💤 Rest</button>
+      <button onclick="spawnCombat()">👹 Fight!</button>
+      <button onclick="rollDice('1d20')">🎲 d20</button>
+      <button onclick="rollDice('1d6')">🎲 d6</button>
+      <button onclick="saveLog()">💾 Save Log</button>
+    </div>
+  </section>
+</main>
+
+<script>
+const campaignId = localStorage.getItem('srpg_active');
+let campaigns = JSON.parse(localStorage.getItem('srpg_campaigns')||'[]');
+let campaign = campaigns.find(c=>c.id===campaignId);
+if(!campaign || !campaign.hero){ alert('No hero found. Roll one first.'); window.location.href='index.html'; }
+
+let hero = campaign.hero;
+let inCombat = false;
+let foe = null;
+let defending = false;
+
+const FOES = [
+  {name:'Goblin',hp:4,ac:12,thac0:20,dmg:'1d6',xp:10},
+  {name:'Orc',hp:8,ac:13,thac0:18,dmg:'1d8',xp:25},
+  {name:'Skeleton',hp:6,ac:11,thac0:19,dmg:'1d6',xp:20},
+  {name:'Bandit',hp:6,ac:12,thac0:19,dmg:'1d6',xp:15},
+  {name:'Giant Rat',hp:3,ac:10,thac0:20,dmg:'1d3',xp:5},
+  {name:'Kobold',hp:3,ac:11,thac0:20,dmg:'1d4',xp:5},
+  {name:'Hobgoblin',hp:10,ac:14,thac0:17,dmg:'1d8',xp:35},
+  {name:'Zombie',hp:12,ac:11,thac0:18,dmg:'1d8',xp:30}
+];
+
+const DM_RESPONSES = {
+  look: [
+    "The stone walls glisten with moisture. Somewhere, water drips.",
+    "Ancient runes flicker with faint blue light. You feel watched.",
+    "The corridor stretches into darkness. Bones litter the floor.",
+    "A cold draft carries the smell of decay. Something moved in the shadows.",
+    "Torchlight dances on wet stone. The silence is oppressive."
+  ],
+  search: [
+    "You find a loose stone with 5gp hidden behind it.",
+    "Rummaging through debris, you uncover a healing potion.",
+    "Nothing but rat droppings and broken pottery.",
+    "A skeletal hand clutches a rusted key. Worthless, probably.",
+    "Behind a tapestry: a concealed niche with a silver dagger."
+  ],
+  rest: [
+    "You catch your breath. HP restored somewhat.",
+    "A fitful rest. You dream of teeth and darkness.",
+    "You bandage your wounds and feel a bit better.",
+    "The stone floor is cold, but you manage to rest.",
+    "An hour passes. You feel ready to continue."
+  ],
+  default: [
+    "The dungeon echoes with your actions.",
+    "Nothing happens. The darkness watches.",
+    "You press on, wary of every shadow.",
+    "The air grows thick. Something is near.",
+    "Your footsteps echo into the void."
+  ]
+};
+
+function d(n){ return Math.floor(Math.random()*n)+1; }
+function roll(expr){
+  if(expr==='1d20') return d(20);
+  if(expr==='1d6') return d(6);
+  const m = expr.match(/(\d+)d(\d+)/);
+  if(!m) return 0;
+  let sum=0; for(let i=0;i<parseInt(m[1]);i++) sum+=d(parseInt(m[2])); return sum;
+}
+
+function timestamp(){ return new Date().toLocaleTimeString([],{h:'2-digit',m:'2-digit'}); }
+
+function log(msg, type){
+  const chat = document.getElementById('chatLog');
+  const div = document.createElement('div');
+  div.className = 'msg msg-' + type;
+  div.innerHTML = '<span class="timestamp">[' + timestamp() + ']</span> ' + msg;
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function updateSidebar(){
+  document.getElementById('hHp').textContent = hero.hp;
+  document.getElementById('hMax').textContent = hero.maxHp;
+  document.getElementById('hAc').textContent = hero.ac;
+  document.getElementById('hThac0').textContent = hero.thac0;
+  
+  document.getElementById('sName').textContent = hero.name;
+  document.getElementById('sClass').textContent = hero.class;
+  document.getElementById('sLevel').textContent = hero.level;
+  document.getElementById('sXp').textContent = hero.xp;
+  document.getElementById('sStr').textContent = hero.STR;
+  document.getElementById('sDex').textContent = hero.DEX;
+  document.getElementById('sCon').textContent = hero.CON;
+  document.getElementById('sInt').textContent = hero.INT;
+  document.getElementById('sWis').textContent = hero.WIS;
+  document.getElementById('sCha').textContent = hero.CHA;
+  document.getElementById('sGear').textContent = hero.gear.join(', ');
+}
+
+function sendMsg(){
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  if(!text) return;
+  input.value = '';
+  
+  log(text, 'player');
+  
+  const lower = text.toLowerCase();
+  if(lower.indexOf('look')>-1 || lower.indexOf('l ')===0){
+    setTimeout(function(){log(pick(DM_RESPONSES.look), 'dm');}, 300);
+  } else if(lower.indexOf('search')>-1){
+    setTimeout(function(){log(pick(DM_RESPONSES.search), 'dm');}, 300);
+  } else if(lower.indexOf('rest')>-1){
+    const heal = d(4);
+    hero.hp = Math.min(hero.maxHp, hero.hp + heal);
+    updateSidebar();
+    setTimeout(function(){log(pick(DM_RESPONSES.rest) + ' (+' + heal + ' HP)', 'dm');}, 300);
+  } else {
+    setTimeout(function(){log(pick(DM_RESPONSES.default), 'dm');}, 300);
+  }
+  
+  saveCampaign();
+}
+
+function quickAction(action){
+  document.getElementById('chatInput').value = action;
+  sendMsg();
+}
+
+function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+function spawnCombat(){
+  if(inCombat) return;
+  const template = FOES[Math.floor(Math.random()*FOES.length)];
+  foe = {name:template.name, hp:template.hp, ac:template.ac, thac0:template.thac0, dmg:template.dmg, xp:template.xp, currentHp:template.hp};
+  inCombat = true;
+  defending = false;
+  
+  document.getElementById('combatPanel').classList.add('active');
+  document.getElementById('fName').textContent = foe.name;
+  document.getElementById('fHp').textContent = foe.currentHp + '/' + foe.hp;
+  document.getElementById('fAc').textContent = foe.ac;
+  document.getElementById('fThac0').textContent = foe.thac0;
+  document.getElementById('fDmg').textContent = foe.dmg;
+  
+  log('A ' + foe.name + ' blocks your path! (HP:' + foe.hp + ' AC:' + foe.ac + ')', 'combat');
+}
+
+function playerAttack(){
+  if(!inCombat || !foe) return;
+  const roll20 = d(20);
+  const target = hero.thac0 - foe.ac;
+  const hit = roll20 >= target;
+  
+  log(hero.name + ' attacks [d20=' + roll20 + ' vs THAC0 ' + hero.thac0 + ', need ' + target + ']: ' + (hit ? 'HIT!' : 'MISS'), 'combat');
+  
+  if(hit){
+    const dmg = roll('1d6') + (hero.class==='Fighter' ? Math.floor((hero.STR-10)/2) : 0);
+    foe.currentHp -= dmg;
+    log('>> ' + dmg + ' damage! ' + foe.name + ' has ' + Math.max(0,foe.currentHp) + ' HP left.', 'combat');
+    
+    if(foe.currentHp <= 0){
+      log(foe.name + ' is slain! +' + foe.xp + ' XP', 'combat');
+      hero.xp += foe.xp;
+      endCombat();
+      return;
+    }
+  }
+  
+  foeTurn();
+}
+
+function playerDefend(){
+  if(!inCombat) return;
+  defending = true;
+  log(hero.name + ' takes a defensive stance (+2 AC this round).', 'combat');
+  foeTurn();
+}
+
+function playerFlee(){
+  if(!inCombat) return;
+  const fleeRoll = d(20);
+  if(fleeRoll >= 10){
+    log(hero.name + ' flees! [d20=' + fleeRoll + ']', 'combat');
+    endCombat();
+  } else {
+    log(hero.name + ' tries to flee but is blocked! [d20=' + fleeRoll + ']', 'combat');
+    foeTurn();
+  }
+}
+
+function foeTurn(){
+  if(!inCombat || !foe || foe.currentHp <= 0) return;
+  setTimeout(function(){
+    const roll20 = d(20);
+    const effectiveAc = hero.ac + (defending ? 2 : 0);
+    const target = foe.thac0 - effectiveAc;
+    const hit = roll20 >= target;
+    
+    log(foe.name + ' attacks [d20=' + roll20 + ' vs AC ' + effectiveAc + ']: ' + (hit ? 'HIT!' : 'MISS'), 'combat');
+    
+    if(hit){
+      const dmg = roll(foe.dmg);
+      hero.hp -= dmg;
+      log('>> ' + dmg + ' damage! ' + hero.name + ' has ' + Math.max(0,hero.hp) + ' HP left.', 'combat');
+      updateSidebar();
+      
+      if(hero.hp <= 0){
+        hero.hp = 0;
+        updateSidebar();
+        log(hero.name + ' has fallen... GAME OVER.', 'combat');
+        inCombat = false;
+        document.getElementById('combatPanel').classList.remove('active');
+        saveCampaign();
+        return;
+      }
+    }
+    
+    defending = false;
+    saveCampaign();
+  }, 500);
+}
+
+function endCombat(){
+  inCombat = false;
+  foe = null;
+  defending = false;
+  document.getElementById('combatPanel').classList.remove('active');
+  log('Combat ended.', 'system');
+  saveCampaign();
+}
+
+function rollDice(expr){
+  const result = roll(expr);
+  log('Rolled ' + expr + ': ' + result, 'system');
+}
+
+function saveLog(){
+  campaign.log = Array.from(document.getElementById('chatLog').children).map(function(c){return c.textContent;});
+  saveCampaign();
+  log('Log saved.', 'system');
+}
+
+function saveCampaign(){
+  const idx = campaigns.findIndex(function(c){return c.id===campaignId;});
+  campaigns[idx] = campaign;
+  localStorage.setItem('srpg_campaigns', JSON.stringify(campaigns));
+}
+
+updateSidebar();
+log('Welcome, ' + hero.name + ' the ' + hero.class + '. The dungeon awaits.', 'dm');
+log('Type commands or use the buttons below. Try "look", "search", "rest", or "fight".', 'system');
+</script>
+</body>
+</html>
