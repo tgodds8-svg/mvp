@@ -3,131 +3,166 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Solo RPG — Campaign Hub</title>
+<title>Solo RPG — Create Hero</title>
 <style>
 :root{--bg:#1a1a2e;--panel:#16213e;--accent:#e94560;--text:#eaeaea;--muted:#a0a0a0;--good:#2ecc71;}
 *{box-sizing:border-box;font-family:'Courier New',Courier,monospace;}
 body{background:var(--bg);color:var(--text);margin:0;padding:2rem;min-height:100vh;}
 h1{text-align:center;font-size:2.5rem;margin-bottom:.5rem;text-transform:uppercase;letter-spacing:3px;}
 .subtitle{text-align:center;color:var(--muted);margin-bottom:2rem;}
-.tier-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1.5rem;max-width:900px;margin:0 auto 2rem;}
-.tier-card{background:var(--panel);border:2px solid #0f3460;border-radius:8px;padding:1.5rem;text-align:center;cursor:pointer;transition:.2s;}
-.tier-card:hover{border-color:var(--accent);transform:translateY(-4px);}
-.tier-card h2{margin-top:0;color:var(--accent);font-size:1.3rem;}
-.tier-card p{color:var(--muted);font-size:.9rem;}
-.btn{display:inline-block;background:var(--accent);color:#fff;padding:.6rem 1.2rem;border-radius:4px;text-decoration:none;font-weight:bold;margin-top:.5rem;border:none;cursor:pointer;font-size:1rem;}
-.btn:hover{background:#ff6b81;}
-.campaigns{max-width:700px;margin:2rem auto;background:var(--panel);padding:1.5rem;border-radius:8px;}
-.campaigns h2{margin-top:0;border-bottom:2px solid var(--accent);padding-bottom:.5rem;}
-.campaign-list{list-style:none;padding:0;}
-.campaign-list li{display:flex;justify-content:space-between;align-items:center;padding:.8rem 0;border-bottom:1px solid #0f3460;}
-.campaign-list li:last-child{border:none;}
-.campaign-info{flex:1;}
-.campaign-name{font-weight:bold;color:var(--text);}
-.campaign-meta{font-size:.8rem;color:var(--muted);}
-.actions{display:flex;gap:.5rem;}
-.actions .btn{padding:.4rem .8rem;font-size:.85rem;}
-.empty{color:var(--muted);text-align:center;padding:1rem;font-style:italic;}
-.hidden{display:none;}
-.modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.8);display:flex;justify-content:center;align-items:center;z-index:100;}
-.modal-content{background:var(--panel);padding:2rem;border-radius:8px;max-width:400px;width:90%;border:2px solid var(--accent);} 
-.modal-content h3{margin-top:0;}
-.modal-content input{width:100%;padding:.6rem;margin:.5rem 0;background:#0f3460;border:1px solid var(--accent);color:var(--text);border-radius:4px;}
-.modal-actions{display:flex;gap:.5rem;justify-content:flex-end;margin-top:1rem;}
-.tag{display:inline-block;background:#0f3460;color:var(--accent);padding:.2rem .5rem;border-radius:4px;font-size:.75rem;margin-left:.5rem;}
+.container{max-width:600px;margin:0 auto;background:var(--panel);padding:2rem;border-radius:8px;border:2px solid #0f3460;}
+h2{color:var(--accent);margin-top:0;}
+.section{margin-bottom:1.5rem;}
+.section-title{color:var(--accent);font-weight:bold;margin-bottom:.5rem;font-size:1.1rem;}
+label{display:block;margin-top:.5rem;color:var(--muted);font-size:.9rem;}
+input,select{width:100%;padding:.5rem;background:#0f3460;border:1px solid var(--accent);color:var(--text);border-radius:4px;font-family:inherit;margin-top:.3rem;}
+input:focus,select:focus{outline:none;border-color:#ff6b81;}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+.row>div{display:flex;flex-direction:column;}
+.stat-display{display:grid;grid-template-columns:repeat(6,1fr);gap:.5rem;margin-top:.5rem;}
+.stat-box{background:#0f1a30;padding:.8rem;border-radius:4px;text-align:center;border-left:3px solid var(--accent);}
+.stat-label{font-size:.75rem;color:var(--muted);margin-bottom:.2rem;}
+.stat-value{font-size:1.2rem;font-weight:bold;color:var(--good);}
+button{display:inline-block;background:var(--accent);color:#fff;padding:.7rem 1.5rem;border:none;border-radius:4px;cursor:pointer;font-weight:bold;font-size:1rem;margin-top:1rem;}
+button:hover{background:#ff6b81;}
+.back{background:#0f3460;color:var(--accent);margin-right:.5rem;}
+.back:hover{background:#1a5078;}
+.gear-item{display:flex;gap:.5rem;align-items:center;margin-top:.3rem;}
+.gear-item input{flex:1;}
+.gear-item button{padding:.3rem .6rem;font-size:.8rem;margin:0;}
+#gearList{list-style:none;padding:0;}
+#gearList li{background:#0f1a30;padding:.5rem;margin-top:.3rem;border-radius:4px;display:flex;justify-content:space-between;align-items:center;}
 </style>
 </head>
 <body>
 <h1>⚔️ Solo RPG</h1>
-<p class="subtitle">Choose your tier. Roll your hero. Play your story.</p>
+<p class="subtitle">Create Your Hero</p>
 
-<div class="tier-grid">
-  <div class="tier-card" onclick="startCampaign('novice')">
-    <h2>Novice</h2>
-    <p>Standard 3d6. Classic death. Pure old-school.</p>
-    <span class="btn">Start Novice</span>
+<div class="container">
+  <div class="section">
+    <label>Hero Name</label>
+    <input type="text" id="heroName" placeholder="What is your name?">
   </div>
-  <div class="tier-card" onclick="startCampaign('veteran')">
-    <h2>Veteran</h2>
-    <p>4d6 drop lowest. More HP. Slightly forgiving.</p>
-    <span class="btn">Start Veteran</span>
-  </div>
-  <div class="tier-card" onclick="startCampaign('legend')">
-    <h2>Legend</h2>
-    <p>Heroic array. Max HP. You are the chosen one.</p>
-    <span class="btn">Start Legend</span>
-  </div>
-</div>
 
-<div class="campaigns">
-  <h2>Your Campaigns</h2>
-  <ul class="campaign-list" id="campaignList"><li class="empty">No campaigns yet. Pick a tier above.</li></ul>
-</div>
+  <div class="section">
+    <label>Class</label>
+    <select id="heroClass" onchange="updateStats()">
+      <option value="Fighter">Fighter (STR bonus)</option>
+      <option value="Wizard">Wizard (INT bonus)</option>
+      <option value="Rogue">Rogue (DEX bonus)</option>
+      <option value="Cleric">Cleric (WIS bonus)</option>
+    </select>
+  </div>
 
-<div id="nameModal" class="modal hidden">
-  <div class="modal-content">
-    <h3>Name Your Campaign</h3>
-    <input type="text" id="campaignName" placeholder="e.g., The Doom of Thornwick" maxlength="40">
-    <div class="modal-actions">
-      <button class="btn" onclick="closeModal()" style="background:var(--muted)">Cancel</button>
-      <button class="btn" onclick="confirmStart()">Create & Roll Hero</button>
+  <div class="section">
+    <label>Difficulty Tier</label>
+    <select id="tierDisplay">
+      <option>Calculating...</option>
+    </select>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Attributes</div>
+    <div class="stat-display" id="statDisplay"></div>
+  </div>
+
+  <div class="section">
+    <label>Starting Gear (add items)</label>
+    <div class="gear-item">
+      <input type="text" id="gearInput" placeholder="e.g., Longsword, Shield">
+      <button style="margin:0;padding:.3rem .6rem;font-size:.8rem;" onclick="addGear()">+</button>
     </div>
+    <ul id="gearList"></ul>
+  </div>
+
+  <div style="text-align:center;">
+    <button class="back" onclick="window.location.href='index.html'">Back</button>
+    <button onclick="rollHero()">🎲 Roll & Start Adventure</button>
   </div>
 </div>
 
 <script>
-let selectedTier = null;
-const campaigns = JSON.parse(localStorage.getItem('srpg_campaigns')||'[]');
+const campaignId = localStorage.getItem('srpg_active');
+let campaigns = JSON.parse(localStorage.getItem('srpg_campaigns')||'[]');
+let campaign = campaigns.find(c=>c.id===campaignId);
+if(!campaign){ alert('No active campaign. Start one from the hub.'); window.location.href='index.html'; }
 
-function startCampaign(tier){
-  selectedTier = tier;
-  document.getElementById('nameModal').classList.remove('hidden');
-  document.getElementById('campaignName').value = '';
-  document.getElementById('campaignName').focus();
+let currentGear = [];
+
+function d(n){ return Math.floor(Math.random()*n)+1; }
+
+function rollStats(){
+  let stats = {};
+  const attrs = ['STR','DEX','CON','INT','WIS','CHA'];
+  
+  if(campaign.tier==='novice'){
+    attrs.forEach(attr => { stats[attr] = 3 + d(6); });
+  } else if(campaign.tier==='veteran'){
+    const rolls = [];
+    for(let i=0;i<4;i++) rolls.push(d(6));
+    rolls.sort((a,b)=>b-a);
+    attrs.forEach((attr,i) => { stats[attr] = 3 + rolls[i]; });
+  } else if(campaign.tier==='legend'){
+    stats.STR = 8; stats.DEX = 7; stats.CON = 7; stats.INT = 6; stats.WIS = 6; stats.CHA = 5;
+  }
+  
+  return stats;
 }
 
-function closeModal(){
-  document.getElementById('nameModal').classList.add('hidden');
-  selectedTier = null;
+function updateStats(){
+  const stats = rollStats();
+  document.getElementById('statDisplay').innerHTML = Object.entries(stats).map(([k,v]) => 
+    `<div class="stat-box"><div class="stat-label">${k}</div><div class="stat-value">${v}</div></div>`
+  ).join('');
 }
 
-function confirmStart(){
-  const name = document.getElementById('campaignName').value.trim();
-  if(!name){ alert('Give your campaign a name.'); return; }
-  const id = 'c_' + Date.now();
-  const campaign = {id, name, tier:selectedTier, created:Date.now(), hero:null, log:[]};
-  campaigns.push(campaign);
+function addGear(){
+  const input = document.getElementById('gearInput');
+  const item = input.value.trim();
+  if(!item) return;
+  currentGear.push(item);
+  input.value = '';
+  renderGear();
+}
+
+function removeGear(idx){
+  currentGear.splice(idx,1);
+  renderGear();
+}
+
+function renderGear(){
+  const list = document.getElementById('gearList');
+  list.innerHTML = currentGear.map((item,i) => 
+    `<li>${item} <button style="background:#c0392b;padding:.2rem .4rem;font-size:.7rem;" onclick="removeGear(${i})">✕</button></li>`
+  ).join('');
+}
+
+function rollHero(){
+  const name = document.getElementById('heroName').value.trim();
+  if(!name){ alert('Give your hero a name!'); return; }
+  
+  const heroClass = document.getElementById('heroClass').value;
+  const stats = rollStats();
+  const hp = (campaign.tier==='legend' ? 12 : campaign.tier==='veteran' ? 8 : 6) + Math.floor((stats.CON-10)/2);
+  const ac = 10 - Math.floor((stats.DEX-10)/2);
+  const thac0 = 20 - Math.floor((stats.STR-10)/2);
+  
+  const hero = {
+    name, class:heroClass, level:1, xp:0, hp:Math.max(1,hp), maxHp:Math.max(1,hp),
+    ac, thac0, STR:stats.STR, DEX:stats.DEX, CON:stats.CON, INT:stats.INT, WIS:stats.WIS, CHA:stats.CHA,
+    gear: currentGear.length ? currentGear : ['Dagger', 'Rope', 'Torch']
+  };
+  
+  campaign.hero = hero;
+  const idx = campaigns.findIndex(c=>c.id===campaignId);
+  campaigns[idx] = campaign;
   localStorage.setItem('srpg_campaigns', JSON.stringify(campaigns));
-  localStorage.setItem('srpg_active', id);
-  window.location.href = 'character.html';
+  
+  window.location.href = 'play.html';
 }
 
-function renderCampaigns(){
-  const list = document.getElementById('campaignList');
-  if(campaigns.length===0){ list.innerHTML='<li class="empty">No campaigns yet. Pick a tier above.</li>'; return; }
-  list.innerHTML = campaigns.map(c=>{
-    const tierTag = ` <span class="tag">${c.tier}</span>`;
-    const date = new Date(c.created).toLocaleDateString();
-    return `<li>
-      <div class="campaign-info">
-        <div class="campaign-name">${c.name}${tierTag}</div>
-        <div class="campaign-meta">Created ${date} • ${c.hero ? c.hero.name : 'No hero'}</div>
-      </div>
-      <div class="actions">
-        ${c.hero ? `<a class="btn" href="play.html" onclick="localStorage.setItem('srpg_active','${c.id}')">Play</a>` : `<a class="btn" href="character.html" onclick="localStorage.setItem('srpg_active','${c.id}')">Roll Hero</a>`}
-        <button class="btn" style="background:#c0392b" onclick="deleteCampaign('${c.id}')">Delete</button>
-      </div>
-     </li>`;
-  }).join('');
-}
-
-function deleteCampaign(id){
-  if(!confirm('Delete this campaign forever?')) return;
-  const idx = campaigns.findIndex(c=>c.id===id);
-  if(idx>-1){ campaigns.splice(idx,1); localStorage.setItem('srpg_campaigns',JSON.stringify(campaigns)); renderCampaigns(); }
-}
-
-renderCampaigns();
+document.getElementById('tierDisplay').value = campaign.tier;
+updateStats();
 </script>
 </body>
 </html>
