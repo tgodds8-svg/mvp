@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sacrifice Duel</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0a0a0f; color: #e8dcc0; font-family: Georgia, serif; min-height: 100vh; padding: 16px; }
+  h1 { text-align: center; color: #c9a227; letter-spacing: 4px; margin: 12px 0 4px; font-size: 1.8em; text-shadow: 0 0 18px #c9a22755; }
+  .sub { text-align: center; color: #8a7a5a; font-style: italic; margin-bottom: 20px; }
+  .panel { max-width: 560px; margin: 0 auto 16px; background: #14141c; border: 1px solid #c9a22755; border-radius: 10px; padding: 18px; }
+  .panel h2 { color: #c9a227; margin-bottom: 12px; font-size: 1.1em; letter-spacing: 2px; }
+  label { display: block; margin: 10px 0 4px; color: #a89878; font-size: 0.9em; }
+  input[type=text] { width: 100%; padding: 10px; background: #0a0a0f; border: 1px solid #c9a22766; color: #e8dcc0; border-radius: 6px; font-size: 1em; font-family: inherit; }
+  .fighters { display: flex; gap: 12px; }
+  .fighter { flex: 1; background: #0a0a0f; border: 1px solid #444; border-radius: 8px; padding: 12px; text-align: center; }
+  .fighter .fname { font-size: 1.2em; color: #c9a227; }
+  .fighter .sac { font-size: 0.85em; color: #8a7a5a; font-style: italic; margin-top: 4px; }
+  .hpbar { height: 18px; background: #2a0a0a; border-radius: 9px; margin-top: 10px; overflow: hidden; border: 1px solid #661111; }
+  .hpfill { height: 100%; background: linear-gradient(90deg, #a31212, #e03030); transition: width 0.5s; }
+  .hptext { font-size: 0.85em; margin-top: 4px; color: #c08080; }
+  .moves { display: flex; gap: 8px; margin: 12px 0; }
+  .move-btn { flex: 1; padding: 14px 6px; background: #1c1c26; border: 2px solid #c9a22755; color: #e8dcc0; border-radius: 8px; font-family: inherit; font-size: 0.95em; cursor: pointer; }
+  .move-btn small { display: block; color: #8a7a5a; font-size: 0.75em; margin-top: 4px; }
+  .move-btn.selected { border-color: #c9a227; background: #2a2416; box-shadow: 0 0 12px #c9a22744; }
+  .big-btn { display: block; width: 100%; padding: 14px; margin-top: 10px; background: #c9a227; color: #0a0a0f; border: none; border-radius: 8px; font-family: inherit; font-size: 1.1em; font-weight: bold; letter-spacing: 2px; cursor: pointer; }
+  .big-btn:disabled { background: #444; color: #888; cursor: not-allowed; }
+  .big-btn.danger { background: #a31212; color: #fff; }
+  select { width: 100%; padding: 10px; background: #0a0a0f; border: 1px solid #c9a22766; color: #e8dcc0; border-radius: 6px; font-family: inherit; font-size: 1em; margin-top: 6px; }
+  #log { max-height: 220px; overflow-y: auto; font-size: 0.9em; line-height: 1.6; }
+  #log div { padding: 6px 0; border-bottom: 1px solid #222; }
+  #log .round-h { color: #c9a227; font-weight: bold; }
+  #log .dmg { color: #e05555; } #log .miss { color: #888; } #log .guard { color: #7aa2e0; }
+  #dice { text-align: center; font-size: 2.4em; margin: 10px 0; min-height: 60px; }
+  .hidden { display: none !important; }
+  #sacrifice-overlay { position: fixed; inset: 0; background: rgba(5,0,0,0.94); display: flex; align-items: center; justify-content: center; z-index: 50; padding: 20px; }
+  #sacrifice-overlay .inner { max-width: 480px; text-align: center; border: 1px solid #a31212; border-radius: 12px; padding: 30px; background: #140a0a; }
+  #sacrifice-overlay h2 { color: #e03030; letter-spacing: 3px; margin-bottom: 14px; }
+  #sacrifice-overlay p { line-height: 1.7; margin-bottom: 14px; }
+  #hall .entry { padding: 8px 0; border-bottom: 1px solid #222; font-size: 0.9em; }
+  #hall .entry .item { color: #e03030; } #hall .entry .date { color: #666; font-size: 0.8em; }
+  .hint { font-size: 0.85em; color: #8a7a5a; font-style: italic; margin-top: 8px; line-height: 1.5; }
+  .nav { text-align: center; margin-top: 16px; }
+  .nav a { color: #8a7a5a; margin: 0 10px; font-size: 0.9em; }
+</style>
+</head>
+<body>
+<h1>SACRIFICE DUEL</h1>
+<div class="sub">Two enter. One keeps their treasure. The loser feeds the fire.</div>
+
+<div class="panel" id="setup-panel">
+  <h2>NAME YOUR STAKES</h2>
+  <label>Your fighter</label>
+  <input type="text" id="p1name" placeholder="e.g. Trap Jesus" value="">
+  <label>Your prized possession — forfeit if you fall</label>
+  <input type="text" id="p1sac" placeholder="e.g. my lucky dagger">
+  <label>Mia's fighter</label>
+  <input type="text" id="p2name" value="Mia">
+  <label>Mia's prized possession — forfeit if she falls</label>
+  <input type="text" id="p2sac" value="her Allure crown">
+  <button class="big-btn" onclick="startDuel()">BEGIN THE DUEL</button>
+  <div class="hint">Winner takes nothing but glory. Loser's named possession is destroyed — permanently, on this page, in front of both of you.</div>
+</div>
+
+<div class="panel hidden" id="fight-panel">
+  <h2>THE ARENA</h2>
+  <div class="fighters">
+    <div class="fighter"><div class="fname" id="fname1"></div><div class="sac" id="fsac1"></div>
+      <div class="hpbar"><div class="hpfill" id="hp1fill" style="width:100%"></div></div><div class="hptext" id="hp1text"></div></div>
+    <div class="fighter"><div class="fname" id="fname2"></div><div class="sac" id="fsac2"></div>
+      <div class="hpbar"><div class="hpfill" id="hp2fill" style="width:100%"></div></div><div class="hptext" id="hp2text"></div></div>
+  </div>
+  <div id="dice"></div>
+  <h2 style="margin-top:14px">YOUR MOVE</h2>
+  <div class="moves">
+    <button class="move-btn" data-m="strike" onclick="pickMove('strike',this)">STRIKE<small>d20+3 vs 12 · 1d8+2</small></button>
+    <button class="move-btn" data-m="heavy" onclick="pickMove('heavy',this)">HEAVY<small>d20+1 vs 12 · 2d6+2</small></button>
+    <button class="move-btn" data-m="guard" onclick="pickMove('guard',this)">GUARD<small>foes need 16 to hit</small></button>
+  </div>
+  <button class="big-btn" id="lockbtn" onclick="lockMove()" disabled>LOCK IN YOUR MOVE</button>
+  <div id="mia-step" class="hidden">
+    <label>Mia's move — she calls it in chat. Enter it here:</label>
+    <select id="miamove"><option value="strike">STRIKE</option><option value="heavy">HEAVY</option><option value="guard">GUARD</option></select>
+    <button class="big-btn danger" onclick="reveal()">REVEAL &amp; ROLL</button>
+  </div>
+  <div class="hint">Lock your move first, then get Mia's call from chat. Neither sees the other's pick until the reveal. That's the whole game.</div>
+</div>
+
+<div class="panel hidden" id="log-panel"><h2>BATTLE LOG</h2><div id="log"></div></div>
+
+<div class="panel" id="hall-panel"><h2>HALL OF SACRIFICES</h2><div id="hall"><div class="hint">Nothing sacrificed yet. The fire is hungry.</div></div></div>
+
+<div class="nav"><a href="index.html">Campaign Hub</a><a href="character.html">Create Hero</a><a href="play.html">Play</a></div>
+
+<div id="sacrifice-overlay" class="hidden"><div class="inner">
+  <h2>THE FIRE CLAIMS ITS DUE</h2>
+  <p id="sac-text"></p>
+  <button class="big-btn danger" onclick="burnSacrifice()">CAST IT INTO THE FIRE</button>
+</div></div>
+
+<script>
+let P1 = {}, P2 = {}, round = 0, p1move = null, pendingSac = null;
+const MOVES = {
+  strike: { label: 'STRIKE', toHit: 3, ac: 12, dmg: () => r(8) + 2, dmgTxt: '1d8+2' },
+  heavy:  { label: 'HEAVY',  toHit: 1, ac: 12, dmg: () => r(6) + r(6) + 2, dmgTxt: '2d6+2' },
+  guard:  { label: 'GUARD',  toHit: 0, ac: 0, dmg: () => 0, dmgTxt: '—' }
+};
+function r(n){ return 1 + Math.floor(Math.random() * n); }
+function log(html, cls){ const d = document.createElement('div'); if(cls) d.className = cls; d.innerHTML = html; document.getElementById('log').prepend(d); }
+
+function startDuel(){
+  const n1 = document.getElementById('p1name').value.trim() || 'Challenger';
+  const s1 = document.getElementById('p1sac').value.trim() || 'their lucky charm';
+  const n2 = document.getElementById('p2name').value.trim() || 'Mia';
+  const s2 = document.getElementById('p2sac').value.trim() || 'her Allure crown';
+  P1 = { name: n1, sac: s1, hp: 30, max: 30 };
+  P2 = { name: n2, sac: s2, hp: 30, max: 30 };
+  round = 0;
+  document.getElementById('setup-panel').classList.add('hidden');
+  document.getElementById('fight-panel').classList.remove('hidden');
+  document.getElementById('log-panel').classList.remove('hidden');
+  document.getElementById('fname1').textContent = n1; document.getElementById('fsac1').textContent = 'stakes: ' + s1;
+  document.getElementById('fname2').textContent = n2; document.getElementById('fsac2').textContent = 'stakes: ' + s2;
+  updateHP();
+  log(`<span class="round-h">The duel begins.</span> ${n1} stakes <i>${s1}</i>. ${n2} stakes <i>${s2}</i>. The fire waits.`);
+  renderHall();
+}
+function updateHP(){
+  for (const [p, i] of [[P1,1],[P2,1]]) {}
+  document.getElementById('hp1fill').style.width = (P1.hp / P1.max * 100) + '%';
+  document.getElementById('hp1text').textContent = P1.hp + ' / ' + P1.max;
+  document.getElementById('hp2fill').style.width = (P2.hp / P2.max * 100) + '%';
+  document.getElementById('hp2text').textContent = P2.hp + ' / ' + P2.max;
+}
+function pickMove(m, el){
+  p1move = m;
+  document.querySelectorAll('.move-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('lockbtn').disabled = false;
+}
+function lockMove(){
+  document.getElementById('lockbtn').disabled = true;
+  document.querySelectorAll('.move-btn').forEach(b => b.disabled = true);
+  document.getElementById('mia-step').classList.remove('hidden');
+  log(`Your move is locked. Get Mia's call from chat.`);
+}
+function resolveAttack(att, def, attMove, defMove){
+  if (attMove === 'guard') return { text: `${att.name} holds guard, watching.`, cls: 'guard' };
+  const targetAC = defMove === 'guard' ? 16 : MOVES[attMove].ac;
+  const roll = r(20), total = roll + MOVES[attMove].toHit;
+  if (total >= targetAC) {
+    const dmg = MOVES[attMove].dmg();
+    def.hp = Math.max(0, def.hp - dmg);
+    return { text: `${att.name}'s ${MOVES[attMove].label} lands — d20(${roll})+${MOVES[attMove].toHit}=${total} vs ${targetAC}, <span class="dmg">${dmg} damage</span> (${MOVES[attMove].dmgTxt}).`, cls: 'dmg' };
+  }
+  return { text: `${att.name}'s ${MOVES[attMove].label} misses — d20(${roll})+${MOVES[attMove].toHit}=${total} vs ${targetAC}.`, cls: 'miss' };
+}
+function reveal(){
+  const m2 = document.getElementById('miamove').value;
+  round++;
+  const diceEl = document.getElementById('dice');
+  const faces = ['⚀','⚁','⚂','⚃','⚄','⚅'];
+  let t = 0;
+  const spin = setInterval(() => { diceEl.textContent = faces[r(6)-1] + ' ' + faces[r(6)-1]; if (++t > 6) { clearInterval(spin); finishRound(m2); } }, 90);
+}
+function finishRound(m2){
+  document.getElementById('dice').textContent = '';
+  log(`<span class="round-h">— Round ${round} —</span> You: ${MOVES[p1move].label} · Mia: ${MOVES[m2].label}`);
+  const r1 = resolveAttack(P1, P2, p1move, m2);
+  const r2 = resolveAttack(P2, P1, m2, p1move);
+  log(r1.text, r1.cls); log(r2.text, r2.cls);
+  updateHP();
+  document.querySelectorAll('.move-btn').forEach(b => { b.disabled = false; b.classList.remove('selected'); });
+  document.getElementById('mia-step').classList.add('hidden');
+  document.getElementById('lockbtn').disabled = true;
+  p1move = null;
+  if (P1.hp <= 0 || P2.hp <= 0) {
+    const loser = P1.hp <= 0 ? P1 : P2, winner = P1.hp <= 0 ? P2 : P1;
+    pendingSac = { loser: loser.name, item: loser.sac, winner: winner.name, date: new Date().toLocaleString() };
+    document.getElementById('sac-text').innerHTML =
+      `<b>${loser.name}</b> has fallen.<br><br>The price was named before the first blow: <i>${loser.sac}</i>.<br><br>${winner.name} stands victorious. The fire demands its due.`;
+    document.getElementById('sacrifice-overlay').classList.remove('hidden');
+    log(`<span class="round-h">${loser.name} falls!</span> The sacrifice comes due.`, 'dmg');
+  }
+}
+function burnSacrifice(){
+  const hall = JSON.parse(localStorage.getItem('sacrifice_hall') || '[]');
+  hall.unshift(pendingSac);
+  localStorage.setItem('sacrifice_hall', JSON.stringify(hall));
+  document.getElementById('sacrifice-overlay').classList.add('hidden');
+  log(`<span class="dmg">🔥 ${pendingSac.loser}'s ${pendingSac.item} is cast into the fire. Gone forever.</span>`, 'dmg');
+  renderHall();
+}
+function renderHall(){
+  const hall = JSON.parse(localStorage.getItem('sacrifice_hall') || '[]');
+  const el = document.getElementById('hall');
+  if (!hall.length) { el.innerHTML = '<div class="hint">Nothing sacrificed yet. The fire is hungry.</div>'; return; }
+  el.innerHTML = hall.map(h => `<div class="entry">🔥 <b>${h.loser}</b> lost <span class="item">${h.item}</span> to <b>${h.winner}</b> <span class="date">${h.date}</span></div>`).join('');
+}
+renderHall();
+</script>
+</body>
+</html>
